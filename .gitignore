@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Private / local data — never publish real schemas
+# (example fixtures under examples/ are tracked explicitly)
+*.a5er
+!examples/*.a5er
+
+# Generated viewers at the repo root (examples/ keeps its committed demo)
+/*.html
+
+# Internal planning notes
+plans/

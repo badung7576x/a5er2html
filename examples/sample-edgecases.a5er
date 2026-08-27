@@ -1,0 +1,115 @@
+﻿# A5:ER FORMAT:21
+# A5:ER ENCODING:UTF8
+#  Fixture for a5er2html viewer tests (parser edge cases)
+#  Covers: UTF-8 BOM, zero-field entity, entity without Page/Position,
+#  lowercase page name, composite PK, short field row, multi-line Comment,
+#  multi-line Note, dangling relation target, unknown section,
+#  ManyToMany / ManyToOne / N:1 Cardinality, RelationType=3 N:N codes.
+
+[Manager]
+Page=Main
+PageInfo="Main",7,"A3Landscape",$FFFFFF
+PageInfo="Sub",7,"A4Portrait",$FFFFFF
+RDBMSType=0
+RDBMSTypeName=PostgreSQL 16
+
+[Entity]
+PName=E_COMPOSITE
+LName=複合主キー
+Comment=Composite primary key (orders 0 and 1)
+Page=Main
+Left=40
+Top=40
+Field="テナントID","tenant_id","int","NOT NULL",0,"","part 1 of PK",$FFFFFFFF,""
+Field="連番","seq","int","NOT NULL",1,"","part 2 of PK",$FFFFFFFF,""
+Field="データ","payload","jsonb",,,"'{}'::jsonb","",$FFFFFFFF,""
+Position="Main",40,40
+
+[Entity]
+PName=E_NO_FIELDS
+LName=空エンティティ
+Comment=Entity with zero Field rows — must render as a header-only card
+Page=Main
+Left=460
+Top=40
+Position="Main",460,40
+
+[Entity]
+PName=E_FALLBACK
+Comment=No Page/Position/Left/Top — defaults to page MAIN at 0,0.
+Multi-line comment: this second line is a value continuation.
+Field="名前","name","varchar(50)"
+
+[Entity]
+PName=E_LOWER_PAGE
+LName=小文字ページ
+Comment=Page tag written lowercase; must land on the declared 'Main' page
+Page=main
+Left=40
+Top=420
+Field="ID","id","uuid","NOT NULL",0,"","",$FFFFFFFF,""
+Position="main",40,420
+
+[Entity]
+PName=E_SUB_PAGE
+LName=別ページ
+Comment=Lives on the second page
+Page=Sub
+Left=60
+Top=60
+Field="ID","id","bigint","NOT NULL",0,"","",$FFFFFFFF,""
+Field="参照ID","ref_id","bigint",,,"","FK -> E_COMPOSITE",$FFFFFFFF,""
+Position="Sub",60,60
+
+[Relation]
+Entity1=E_COMPOSITE
+Entity2=E_SUB_PAGE
+Fields1="tenant_id"
+Fields2="ref_id"
+Cardinality=OneToMany
+
+[Relation]
+Entity1=E_SUB_PAGE
+Entity2=E_NO_FIELDS
+Fields1="id"
+Fields2="x"
+Cardinality=ManyToMany
+
+[Relation]
+Entity1=E_FALLBACK
+Entity2=E_COMPOSITE
+Fields1="name"
+Fields2="payload"
+Cardinality=ManyToOne
+
+[Relation]
+Entity1=E_COMPOSITE
+Entity2=E_FALLBACK
+Fields1="tenant_id"
+Fields2="name"
+Cardinality=N:1
+
+[Relation]
+Entity1=E_LOWER_PAGE
+Entity2=E_SUB_PAGE
+RelationType1=3
+RelationType2=3
+Fields1="id"
+Fields2="id"
+
+[Relation]
+Entity1=E_COMPOSITE
+Entity2=NO_SUCH_TABLE
+Fields1="tenant_id"
+Fields2="whatever"
+
+[Note]
+Text="複合主キーと N:N の
+複数行にわたる注釈。"
+Page=Main
+Left=460
+Top=420
+Position="Main",460,420
+
+[Foobar]
+Something=1

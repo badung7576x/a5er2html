@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: tests (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ['3.9', '3.12', '3.14']
+        exclude:
+          - os: macos-latest
+            python: '3.9'
+          - os: macos-latest
+            python: '3.14'
+          - os: windows-latest
+            python: '3.9'
+          - os: windows-latest
+            python: '3.14'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+  smoke:
+    name: CLI smoke + demo freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run CLI on every fixture
+        run: |
+          for f in examples/*.a5er; do
+            python -m a5er2html "$f" -o /tmp/out.html
+          done
+      - name: Committed demo is up to date
+        run: |
+          python -m a5er2html examples/sample-utf8.a5er -o /tmp/demo.html
+          diff /tmp/demo.html examples/sample-utf8.html
+
+  package:
+    name: pip install smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and run from installed package
+        run: |
+          pip install .
+          cd /tmp
+          a5er2html --help
+          a5er2html "${GITHUB_WORKSPACE}/examples/sample-sjis.a5er" -o installed.html
+          test -s installed.html

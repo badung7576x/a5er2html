@@ -1,0 +1,180 @@
+# A5:ER FORMAT:15
+# A5:SQL Mk-2 Version 2.16.2 Copyright (c) 1997 - 2021 m.matsubara
+#  https://a5m2.mmatsubara.com
+#  Fixture for a5er2html viewer tests (e-commerce mini schema)
+
+[Manager]
+Page=Main
+PageInfo="Main",7,"A3Landscape",$FFFFFF
+PageInfo="Batch",7,"A4Portrait",$FFFFFF
+LogicalView = 1
+ViewModePageIndividually=1
+ViewMode=7
+FontName=Tahoma
+FontSize=6
+PaperSize=A3Landscape
+RDBMSType=4
+RDBMSTypeName=Microsoft SQL Server 2008
+
+[Entity]
+PName=M_CUSTOMER
+LName=顧客マスタ
+Comment=Customer master - contains all registered customers
+TableOption=
+Page=MAIN
+Left=40
+Top=40
+Field="顧客ID","customer_id","bigint","NOT NULL",0,"","Primary key, sequence",$FFFFFFFF,""
+Field="顧客名","customer_name","nvarchar(100)","NOT NULL",,"","Full name incl. ""middle"" part",$FFFFFFFF,""
+Field="メール","email","nvarchar(255)","NOT NULL",,"","Unique. Comma, test: a, b, c",$FFFFFFFF,""
+Field="登録日時","created_at","datetime",,,"","",$FFFFFFFF,""
+Position="MAIN",40,40
+
+[Entity]
+PName=M_CATEGORY
+LName=カテゴリ
+Comment=Product category
+TableOption=
+Page=MAIN
+Left=40
+Top=420
+Field="カテゴリID","category_id","int","NOT NULL",0,"","",$FFFFFFFF,""
+Field="カテゴリ名","category_name","nvarchar(50)","NOT NULL",,"","",$FFFFFFFF,""
+Position="MAIN",40,420
+
+[Entity]
+PName=M_PRODUCT
+LName=商品
+Comment=Product master. Price includes tax.
+TableOption=
+Page=MAIN
+Left=320
+Top=420
+Field="商品ID","product_id","bigint","NOT NULL",0,"","",$FFFFFFFF,""
+Field="商品名","product_name","nvarchar(200)","NOT NULL",,"","",$FFFFFFFF,""
+Field="カテゴリID","category_id","int",,,"","FK -> M_CATEGORY",$FFFFFFFF,""
+Field="単価","price","decimal(10, 2)","NOT NULL",,"","comma inside type",$FFFFFFFF,""
+Field="在庫数","stock","int",,,"0","default zero",$FFFFFFFF,""
+Position="MAIN",320,420
+
+[Entity]
+PName=T_ORDER
+LName=受注
+Comment=Order header
+TableOption=
+Page=MAIN
+Left=620
+Top=40
+Field="受注ID","order_id","bigint","NOT NULL",0,"","",$FFFFFFFF,""
+Field="顧客ID","customer_id","bigint",,1,"","FK -> M_CUSTOMER",$FFFFFFFF,""
+Field="受注日時","order_date","datetime","NOT NULL",,"","",$FFFFFFFF,""
+Field="状態","status","smallint","NOT NULL",,"0","0:cart 1:paid 2:shipped",$FFFFFFFF,""
+Position="MAIN",620,40
+
+[Entity]
+PName=T_ORDER_ITEM
+LName=受注明細
+Comment=Order line items
+TableOption=
+Page=MAIN
+Left=620
+Top=280
+Field="受注明細ID","order_item_id","bigint","NOT NULL",0,"","",$FFFFFFFF,""
+Field="受注ID","order_id","bigint",,1,"","FK -> T_ORDER",$FFFFFFFF,""
+Field="商品ID","product_id","bigint",,,"","FK -> M_PRODUCT",$FFFFFFFF,""
+Field="数量","quantity","int","NOT NULL",,"1","",$FFFFFFFF,""
+Position="MAIN",620,280
+
+[Entity]
+PName=T_PAYMENT
+LName=支払
+Comment=1:1 with order
+TableOption=
+Page=MAIN
+Left=900
+Top=40
+Field="支払ID","payment_id","bigint","NOT NULL",0,"","",$FFFFFFFF,""
+Field="受注ID","order_id","bigint",,,"","FK -> T_ORDER (unique)",$FFFFFFFF,""
+Field="支払方法","payment_method","smallint","NOT NULL",,"","",$FFFFFFFF,""
+Field="支払日時","paid_at","datetime",,,"","",$FFFFFFFF,""
+Position="MAIN",900,40
+
+[Entity]
+PName=B_BATCH_JOB
+LName=バッチジョブ
+Comment=batch job definition (page 2)
+TableOption=
+Page=Batch
+Left=60
+Top=60
+Field="ジョブID","job_id","varchar(50)","NOT NULL",0,"","",$FFFFFFFF,""
+Field="ジョブ名","job_name","nvarchar(200)",,,"","",$FFFFFFFF,""
+Position="Batch",60,60
+
+[Entity]
+PName=B_JOB_LOG
+LName=ジョブログ
+Comment=batch run log - no Position line, uses Left/Top only
+TableOption=
+Page=Batch
+Left=60
+Top=300
+Field="ログID","log_id","bigint","NOT NULL",0,"","",$FFFFFFFF,""
+Field="ジョブID","job_id","varchar(50)",,,"","FK -> B_BATCH_JOB",$FFFFFFFF,""
+Field="開始時刻","started_at","datetime",,,"","",$FFFFFFFF,""
+
+[Relation]
+Entity1=M_CUSTOMER
+Entity2=T_ORDER
+Fields1="customer_id"
+Fields2="customer_id"
+Cardinality=OneToMany
+
+[Relation]
+Entity1=M_CATEGORY
+Entity2=M_PRODUCT
+Fields1="category_id"
+Fields2="category_id"
+Cardinality=OneToMany
+
+[Relation]
+Entity1=M_CATEGORY
+Entity2=T_PAYMENT
+RelationType1=2
+RelationType2=3
+Fields1="category_id"
+Fields2="payment_method"
+
+[Relation]
+Entity1=T_ORDER
+Entity2=T_ORDER_ITEM
+Fields1="order_id"
+Fields2="order_id"
+Cardinality=OneToMany
+
+[Relation]
+Entity1=M_PRODUCT
+Entity2=T_ORDER_ITEM
+Fields1="product_id"
+Fields2="product_id"
+Cardinality=OneToMany
+
+[Relation]
+Entity1=T_ORDER
+Entity2=T_PAYMENT
+Fields1="order_id"
+Fields2="order_id"
+Cardinality=OneToOne
+
+[Relation]
+Entity1=B_BATCH_JOB
+Entity2=B_JOB_LOG
+Fields1="job_id"
+Fields2="job_id"
+
+[Note]
+Text="顧客 → 受注 → 明細/支払 のコアフロー。商品はカテゴリに所属。"
+Page=MAIN
+Left=300
+Top=40
+Position="MAIN",300,40

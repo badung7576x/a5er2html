@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "a5er2html"
+version = "1.0.0"
+description = "Generate a self-contained HTML ER-diagram viewer from A5:SQL Mk-2 .a5er files"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "a5er2html contributors" }]
+keywords = ["a5er", "A5:SQL Mk-2", "ER diagram", "database", "schema", "viewer", "html"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Database",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/OWNER/a5er2html"
+Issues = "https://github.com/OWNER/a5er2html/issues"
+
+[project.scripts]
+a5er2html = "a5er2html.cli:main"
+
+[tool.setuptools]
+packages = ["a5er2html"]
+
+[tool.setuptools.package-data]
+a5er2html = ["viewer_template.html"]
