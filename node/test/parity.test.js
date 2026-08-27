@@ -45,6 +45,11 @@ function pythonIr(python, fixture) {
   const run = spawnSync(python, ['-c', PY_DUMP, REPO, join(REPO, fixture)], {
     encoding: 'utf8',
     maxBuffer: 16 * 1024 * 1024,
+    // PY_DUMP prints json.dumps(..., ensure_ascii=False): raw non-ASCII. On
+    // Windows a piped stdout defaults to the ANSI codepage (cp1252), which
+    // cannot encode the Japanese fixtures. Force UTF-8 stdio for the child —
+    // and only stdio — so parse behavior stays identical on every platform.
+    env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
   });
   assert.equal(run.status, 0, `python failed on ${fixture}: ${run.stderr}`);
   return JSON.parse(run.stdout);
