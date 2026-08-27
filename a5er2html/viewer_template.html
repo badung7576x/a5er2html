@@ -362,7 +362,6 @@ function refine() {
   if (!changed) return false;
   const { s } = buildSvg();                          // pass 2 with real widths
   world.innerHTML = s;
-  bindCards();
   return true;
 }
 
