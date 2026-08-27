@@ -9,6 +9,10 @@ venv/
 .coverage
 htmlcov/
 
+# Node
+node/node_modules/
+node/package-lock.json
+
 # Private / local data — never publish real schemas
 # (example fixtures under examples/ are tracked explicitly)
 *.a5er

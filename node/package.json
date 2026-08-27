@@ -1,0 +1,42 @@
+{
+  "name": "a5er2html",
+  "version": "1.1.0",
+  "description": "Generate a self-contained HTML ER-diagram viewer from A5:SQL Mk-2 .a5er files (zero-dependency Node.js port)",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "a5er2html": "src/cli.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src",
+    "viewer_template.html"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/badung7576x/a5er2html.git",
+    "directory": "node"
+  },
+  "bugs": {
+    "url": "https://github.com/badung7576x/a5er2html/issues"
+  },
+  "keywords": [
+    "a5er",
+    "A5:SQL Mk-2",
+    "ER diagram",
+    "database",
+    "schema",
+    "viewer",
+    "html"
+  ],
+  "author": "a5er2html contributors"
+}

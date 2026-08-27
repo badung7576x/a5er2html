@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reset layout** toolbar button to restore the original `.a5er` positions.
 - `Esc` cancels an in-progress drag; a click is distinguished from a drag by
   a 4 px threshold so selection still works.
+- **Node.js implementation** (`node/`) for machines that have Node but no
+  Python: zero npm dependencies, Node 20+. Same intermediate representation,
+  CLI flags (plus `-v/--version`), messages, exit codes, and encoding
+  handling (UTF-8, BOM, Shift_JIS/CP932) as the Python version. Ships the
+  same `viewer_template.html`; a test keeps both copies byte-identical, and
+  the Node suite cross-checks the IR against the Python implementation on
+  every fixture (auto-skipped where Python is unavailable).
 
 ### Fixed
 

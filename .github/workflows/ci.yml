@@ -31,6 +31,51 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s tests -v
 
+  node-test:
+    name: node tests (node${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['20', '22', '24']
+        exclude:
+          - os: macos-latest
+            node: '20'
+          - os: macos-latest
+            node: '24'
+          - os: windows-latest
+            node: '20'
+          - os: windows-latest
+            node: '24'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests (incl. Python-parity)
+        run: npm test
+        working-directory: node
+
+  node-package:
+    name: npm install smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install globally from the node/ package and run
+        run: |
+          npm install -g ./node
+          cd /tmp
+          a5er2html --help
+          a5er2html "${GITHUB_WORKSPACE}/examples/sample-sjis.a5er" -o installed-node.html
+          test -s installed-node.html
+
   smoke:
     name: CLI smoke + demo freshness
     runs-on: ubuntu-latest
@@ -43,6 +88,14 @@ jobs:
         run: |
           for f in examples/*.a5er; do
             python -m a5er2html "$f" -o /tmp/out.html
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Node CLI on every fixture
+        run: |
+          for f in examples/*.a5er; do
+            node node/src/cli.js "$f" -o /tmp/out-node.html
           done
       - name: Committed demo is up to date
         run: |

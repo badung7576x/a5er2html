@@ -45,6 +45,7 @@ A5:SQL Mk-2 は日本の開発現場で広く使われている ER 図ツール�
 ## 動作環境
 
 - Python **3.9 以上**（3.14 までテスト済み。標準ライブラリのみ使用 — `pip install` は不要です）
+- JavaScript 版（[`node/`](node)）を使う場合は Node.js **20 以上** — npm 依存はゼロです
 - 閲覧用にモダンなブラウザ（Chrome / Edge / Firefox / Safari）
 
 ## インストール
@@ -70,6 +71,24 @@ $ pip install .
 ```console
 $ a5er2html input.a5er -o docs/schema.html
 ```
+
+### 方法 C — Python の代わりに Node.js を使う
+
+Node はあるが Python はない環境向けに、依存ゼロの Node.js 版が
+[`node/`](node) に用意されています:
+
+```console
+$ node node/src/cli.js meet_DB.a5er     # クローンしたまま直接実行
+# またはコマンドとしてインストール:
+$ npm install -g ./node
+$ a5er2html input.a5er -o docs/schema.html
+```
+
+同じファイルから同じビューアを生成します: 中間表現（IR）・メッセージ・
+終了コード・文字コード判定はすべて同一で、フラグも Python 版と同じ
+`-o/--output`、`-h/--help` に加え Node 慣行の `-v/--version` が使えます
+（Node のテストスイートは全フィクスチャで Python 実装との IR 一致を検証
+します。Python がない環境ではこのチェックだけ自動的にスキップされます）。
 
 ## 使い方
 
@@ -128,6 +147,10 @@ a5er2html input.a5er [-o output.html]
 3. テンプレートは単一ファイルの HTML/CSS/JS アプリで、A5:ER の座標から
    エンティティカードをレイアウトし、直交リレーションエッジを描画し、
    検索 / タブ / ズームを制御します。
+4. Node.js 版（`node/src/parser.js`、`node/src/cli.js`）はこれらのモジュールを
+   1:1 で再現し、同じ IR を同じ `viewer_template.html` に注入します
+   （各実装がテンプレートのコピーを同梱し、CI テストが両者がバイト単位で
+   一致していることを保証します）。
 
 対応する多重度の表記: `OneToMany`、`ManyToOne`、`OneToOne`、`ManyToMany`、
 比率文字列（`1:N`、`N:1`、`N:N`）、および FORMAT 16 以上の
@@ -147,6 +170,7 @@ a5er2html input.a5er [-o output.html]
 ```console
 $ git clone https://github.com/OWNER/a5er2html.git && cd a5er2html
 $ python3 -m unittest discover -s tests -v
+$ cd node && npm test    # Node.js 版 — Python 実装との一致チェックを含む
 ```
 
 フィクスチャベースのテストワークフローは [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。

@@ -51,6 +51,8 @@ just opens it.
 ## Requirements
 
 - Python **3.9+** (tested up to 3.14; stdlib only — nothing to `pip install`)
+- Node.js **20+** when using the JavaScript port in [`node/`](node) — zero npm
+  dependencies, nothing to install
 - Any modern browser to view the output (Chrome / Edge / Firefox / Safari)
 
 ## Installation
@@ -76,6 +78,25 @@ This gives you an `a5er2html` command:
 ```console
 $ a5er2html input.a5er -o docs/schema.html
 ```
+
+### Option C — Node.js instead of Python
+
+A zero-dependency Node.js port lives in [`node/`](node) for machines that
+have Node but no Python:
+
+```console
+$ node node/src/cli.js meet_DB.a5er     # run straight from the checkout
+# or install it as a command:
+$ npm install -g ./node
+$ a5er2html input.a5er -o docs/schema.html
+```
+
+It produces the same viewer from the same files: identical intermediate
+representation, messages, exit codes, and encoding handling; the same flags
+as the Python CLI (`-o/--output`, `-h/--help`) plus a Node-conventional
+`-v/--version` (the Node test suite cross-checks the IR against the Python
+implementation on every fixture and skips that check automatically when
+Python is absent).
 
 ## Usage
 
@@ -134,6 +155,10 @@ Regenerate the demo: `python3 -m a5er2html examples/sample-utf8.a5er`
 3. The template is a plain single-file HTML/CSS/JS app that lays out entity
    cards from the A5:ER coordinates, draws orthogonal relation edges, and
    wires up search / tabs / zoom.
+4. The Node.js port (`node/src/parser.js`, `node/src/cli.js`) mirrors those
+   modules one-to-one and injects the same IR into the same
+   `viewer_template.html` (each implementation ships a copy; a CI test keeps
+   the two byte-identical).
 
 Supported cardinality inputs: `OneToMany`, `ManyToOne`, `OneToOne`,
 `ManyToMany`, ratio strings (`1:N`, `N:1`, `N:N`), and FORMAT ≥ 16
@@ -156,6 +181,7 @@ Entity2**.
 ```console
 $ git clone https://github.com/OWNER/a5er2html.git && cd a5er2html
 $ python3 -m unittest discover -s tests -v
+$ cd node && npm test    # Node.js port — includes a Python-parity check
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the fixture-based testing workflow.
