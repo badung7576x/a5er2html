@@ -52,9 +52,11 @@
   .tools button:hover, #modeBtn:hover { background: #e8eef5; }
   #zoomPct { font-size: 11px; color: var(--muted); width: 42px; text-align: center; }
   main { position: relative; flex: 1; min-height: 0; }
-  #viewport { width: 100%; height: 100%; display: block; cursor: grab; }
+  #viewport { width: 100%; height: 100%; display: block; cursor: grab;
+              touch-action: none; }
   #viewport.panning { cursor: grabbing; }
   #viewport text { user-select: none; }
+  .entity, .note { cursor: move; }
   .entity .card-bg { fill: var(--card); stroke: #8296ad; stroke-width: 1; }
   .entity .card-head { fill: var(--head); }
   .entity:hover .card-bg, .entity.sel .card-bg { stroke: var(--accent); stroke-width: 2; }
@@ -114,6 +116,7 @@
     <button id="zIn" title="Zoom in">+</button>
     <button id="zFit" title="Fit to view (0)">Fit</button>
     <button id="z100" title="Actual size (1)">1:1</button>
+    <button id="layoutBtn" title="Restore the original .a5er layout" hidden>Reset layout</button>
   </div>
 </header>
 <main>
@@ -247,11 +250,11 @@ function entitySvg(e, m) {   // m: null=no query, undefined=no match, object=mat
   return s;
 }
 
-function noteSvg(n) {
+function noteSvg(n, i) {
   const W = 230, LH = 16;
   const lines = Math.max(1, Math.ceil(textW(n.text) / (W - 16) / .58));
   const H = Math.max(34, 18 + lines * LH);
-  return `<g class="note" transform="translate(${n.x} ${n.y})">
+  return `<g class="note" data-n="${i}" transform="translate(${n.x} ${n.y})">
     <rect class="note-box" width="${W}" height="${H}" rx="3"/>
     <foreignObject x="6" y="5" width="${W - 12}" height="${H - 10}">
       <div xmlns="http://www.w3.org/1999/xhtml" class="note-text">${esc(n.text)}</div>
@@ -330,7 +333,8 @@ function buildSvg() {
   const entStrs = matched.map(({ e, m }) => entitySvg(e, m));
   s += DATA.relations.filter(inPage).map(edgeSvg).join('');   // edges under cards
   s += entStrs.join('');
-  s += DATA.notes.filter(n => (up(n.page) || 'MAIN') === up(S.page)).map(noteSvg).join('');
+  s += DATA.notes.map((n, i) =>
+    (up(n.page) || 'MAIN') === up(S.page) ? noteSvg(n, i) : '').join('');
   return { s, matched, ents };
 }
 
@@ -362,7 +366,6 @@ function refine() {
   if (!changed) return false;
   const { s } = buildSvg();                          // pass 2 with real widths
   world.innerHTML = s;
-  bindCards();
   return true;
 }
 
@@ -396,6 +399,7 @@ function bindCards() {
   world.querySelectorAll('g.entity').forEach(g => {
     g.addEventListener('click', ev => {
       ev.stopPropagation();
+      if (performance.now() - justDraggedAt < 350) return;   // trailing click after drag
       const name = g.dataset.name;
       selected = selected === name ? null : name;
       world.querySelectorAll('.sel').forEach(x => x.classList.remove('sel'));
@@ -441,7 +445,8 @@ viewport.addEventListener('wheel', ev => {
 }, { passive: false });
 let pan = null;
 viewport.addEventListener('pointerdown', ev => {
-  if (ev.target.closest('g.entity') || ev.target.closest('g.edge')) return;
+  if (ev.target.closest('g.entity') || ev.target.closest('g.edge') ||
+      ev.target.closest('g.note')) return;
   pan = { x: ev.clientX, y: ev.clientY, vx: S.view.x, vy: S.view.y };
   viewport.classList.add('panning');
 });
@@ -550,6 +555,117 @@ world.addEventListener('pointerout', ev => {
   const to = ev.relatedTarget;
   if (!to || !to.closest || !to.closest('.frow, g.entity, g.edge')) tipHide();
 });
+/* ------------------------------------------------- layout editing (drag) */
+/* Drag table cards and sticky notes to rearrange the page. Positions are
+   written back onto the DATA objects so every re-render (search, name mode,
+   page tabs) keeps them, and mirrored into localStorage keyed by a hash of
+   the diagram payload so a reload restores the arrangement. Storage may be
+   unavailable (file:// in some browsers, private mode): everything then
+   degrades to session-only. */
+const layoutBtn = document.getElementById('layoutBtn');
+const STORE_KEY = (() => {
+  let h = 0x811c9dc5;                             // FNV-1a over the payload
+  const str = JSON.stringify(DATA);
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return 'a5er2html:' + (h >>> 0).toString(16);
+})();
+const origPos = { e: new Map(), n: new Map() };   // .a5er positions, for Reset
+DATA.entities.forEach(e => { if (e.pName) origPos.e.set(up(e.pName), { x: e.x, y: e.y }); });
+DATA.notes.forEach((n, i) => origPos.n.set(i, { x: n.x, y: n.y }));
+let overrides = { e: {}, n: {} };                 // upper(name) / note idx -> {x,y}
+
+function syncLayoutBtn() {
+  layoutBtn.hidden = !Object.keys(overrides.e).length && !Object.keys(overrides.n).length;
+}
+function storeSave() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(overrides)); } catch { /* blocked */ }
+  syncLayoutBtn();
+}
+function storeLoad() {
+  try {
+    const o = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (!o) return;
+    overrides = { e: o.e || {}, n: o.n || {} };
+    for (const k in overrides.e) {
+      const e = byName.get(k), p = overrides.e[k];
+      if (e && p) { e.x = p.x; e.y = p.y; }
+    }
+    for (const k in overrides.n) {
+      const n = DATA.notes[+k], p = overrides.n[k];
+      if (n && p) { n.x = p.x; n.y = p.y; }
+    }
+  } catch { /* corrupt or unavailable: keep session-only */ }
+  syncLayoutBtn();
+}
+storeLoad();
+
+let drag = null, justDraggedAt = -1e9;
+function redrawEdgesFor(name) {
+  world.querySelectorAll('g.edge').forEach(eg => {
+    if (eg.dataset.e !== name && eg.dataset.t !== name) return;
+    const r = DATA.relations.find(
+      rr => up(rr.entity1) === eg.dataset.e && up(rr.entity2) === eg.dataset.t);
+    if (r) eg.outerHTML = edgeSvg(r);
+  });
+}
+function place(d, x, y) {
+  d.ref.x = x; d.ref.y = y;
+  d.el.setAttribute('transform', `translate(${x} ${y})`);
+  if (d.geoEntry) { d.geoEntry.x = x; d.geoEntry.y = y; }
+  if (d.name) redrawEdgesFor(d.name);
+}
+world.addEventListener('pointerdown', ev => {
+  const entG = ev.target.closest('g.entity');
+  const noteG = entG ? null : ev.target.closest('g.note');
+  if (!entG && !noteG) return;
+  const ref = entG ? byName.get(entG.dataset.name) : DATA.notes[+noteG.dataset.n];
+  if (!ref) return;
+  drag = { el: entG || noteG, ref,
+           geoEntry: entG ? geo.get(entG.dataset.name) : null,
+           name: entG ? entG.dataset.name : null,
+           sx: ev.clientX, sy: ev.clientY, ox: ref.x, oy: ref.y, moved: false };
+});
+window.addEventListener('pointermove', ev => {
+  if (!drag) return;
+  const dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
+  if (!drag.moved) {
+    if (Math.hypot(dx, dy) < 4) return;           // still a click, not a drag
+    drag.moved = true;
+    tipHide();
+  }
+  place(drag, drag.ox + dx / S.view.s, drag.oy + dy / S.view.s);
+});
+function endDrag(commit) {
+  if (!drag) return;
+  if (drag.moved) {
+    justDraggedAt = performance.now();            // swallow the trailing click
+    if (commit) {
+      const p = { x: drag.ref.x, y: drag.ref.y };
+      if (drag.name) overrides.e[drag.name] = p;
+      else overrides.n[drag.el.dataset.n] = p;
+      storeSave();
+    } else place(drag, drag.ox, drag.oy);         // Esc: snap back
+  }
+  drag = null;
+}
+window.addEventListener('pointerup', () => endDrag(true));
+layoutBtn.onclick = () => {
+  overrides = { e: {}, n: {} };
+  try { localStorage.removeItem(STORE_KEY); } catch { /* blocked */ }
+  byName.forEach((e, k) => {
+    const p = origPos.e.get(k);
+    if (p) { e.x = p.x; e.y = p.y; }
+  });
+  DATA.notes.forEach((n, i) => {
+    const p = origPos.n.get(i);
+    if (p) { n.x = p.x; n.y = p.y; }
+  });
+  syncLayoutBtn();
+  render();
+};
 viewport.addEventListener('pointerdown', tipHide);
 /* --------------------------------------------------------------- chrome  */
 document.getElementById('docTitle').textContent = (DATA.source || 'a5er') + ' — A5ER Viewer';
@@ -594,6 +710,7 @@ window.addEventListener('keydown', ev => {
   if (ev.key === '/' && document.activeElement !== qInput) {
     ev.preventDefault(); qInput.focus();
   } else if (ev.key === 'Escape') {
+    if (drag) { endDrag(false); return; }
     if (document.activeElement === qInput) { qInput.value = ''; S.q = ''; render(false); qInput.blur(); }
     else clearSel();
   } else if (document.activeElement !== qInput) {

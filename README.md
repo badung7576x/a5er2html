@@ -42,6 +42,10 @@ just opens it.
 - **PK / FK markers** — 🔑 on primary keys, 🔗 on foreign keys.
 - **Notes** — `[Note]` sticky notes are rendered on their page.
 - **Pan / zoom / fit** — mouse drag, wheel zoom, keyboard shortcuts.
+- **Rearrangeable layout** — drag table cards and notes to reorganize the
+  page; relation edges re-anchor live. The arrangement is saved in the
+  browser (localStorage) and restored on reload; a **Reset layout** button
+  returns the original `.a5er` positions. Works without storage too.
 - **Zero dependencies** — pure Python standard library; works offline.
 
 ## Requirements
@@ -97,7 +101,8 @@ generated.
 | `0` | fit diagram to window |
 | `1` | 100% zoom |
 | `/` | focus the search box |
-| `Esc` | clear search / selection |
+| `Esc` | clear search / selection / cancel a drag |
+| drag a table card or note | move it — edges follow, `Esc` snaps it back |
 | click a table | highlight its relations |
 | hover a table header / field / edge | detail tooltip (comment, default, cardinality…) |
 
@@ -138,7 +143,8 @@ Entity2**.
 
 ## Limitations
 
-- The viewer is **read-only** — it does not edit or write back `.a5er` files.
+- The viewer is **read-only** — it does not edit or write back `.a5er` files
+  (dragged positions live in the viewer/browser only, never in the source).
 - Card layout approximates the A5:SQL Mk-2 editor (same coordinates, measured
   text widths); it is not a pixel-perfect clone.
 - Sections other than `Manager` / `Entity` / `Relation` / `Note` are ignored

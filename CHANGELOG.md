@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-27
+
+### Added
+
+- Rearrangeable layout in the viewer: drag table cards and `[Note]` stickies
+  to reposition them; relation edges re-anchor live while dragging.
+- Layout persistence: dragged positions are saved to localStorage (keyed by
+  a hash of the diagram payload) and restored on reload; degrades to
+  session-only where storage is unavailable (e.g. `file://` in some browsers).
+- **Reset layout** toolbar button to restore the original `.a5er` positions.
+- `Esc` cancels an in-progress drag; a click is distinguished from a drag by
+  a 4 px threshold so selection still works.
+
+### Fixed
+
+- `refine()` double-bound card click listeners (together with `render()`),
+  which made "click a table to highlight its relations" a silent no-op
+  whenever `refine()` widened any card.
+
 ## [1.0.0] - 2026-08-27
 
 ### Added
